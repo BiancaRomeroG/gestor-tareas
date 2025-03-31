@@ -11,15 +11,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController extends ApiController<Task, TaskDto> {
 
     private final UserService userService;
+    private final TaskService taskService;
 
     public TaskController(TaskService taskService, UserService userService) {
         super(taskService);
         this.userService = userService;
+        this.taskService = taskService;
     }
 
     @Override
@@ -79,6 +83,24 @@ public class TaskController extends ApiController<Task, TaskDto> {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
         }
 
+        return ResponseEntity.status(status).body(response);
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<List<TaskDto>>> getTasksByUser(@PathVariable("userId") Long userId) {
+        ApiResponse<List<TaskDto>> response = new ApiResponse<>();
+        HttpStatus status = HttpStatus.OK;
+        try {
+            List<Task> tasks = taskService.getTasksByUserId(userId);
+            List<TaskDto> dtos = transformEntitiesToDtos(tasks);
+            response.setPayload(dtos);
+            response.setMessage("Operación exitosa");
+            response.setStatusCode(HttpStatus.OK.value());
+        } catch (Exception e) {
+            response.setMessage(e.getMessage() != null ? e.getMessage() : "Error desconocido");
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
         return ResponseEntity.status(status).body(response);
     }
 }
