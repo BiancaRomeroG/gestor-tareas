@@ -31,11 +31,9 @@ public class LoginController {
         try {
             UserDetails userDetails = userService.loadUserByUsername(loginRequest.getEmail());
 
-            if (userService.checkHash(loginRequest.getPassword(), userDetails.getPassword())) {
-                // Genera el token
+            if (userService.checkPassword(loginRequest.getPassword(), userDetails.getPassword())) {
                 String token = jwtService.generateToken(userDetails.getUsername());
 
-                // Construimos el payload como un Map con la clave "JWT"
                 Map<String, String> payload = new HashMap<>();
                 payload.put("JWT", token);
 
