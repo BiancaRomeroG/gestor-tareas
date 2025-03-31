@@ -1,7 +1,9 @@
 package com.example.gestortareas.controllers;
 
 import com.example.gestortareas.data.dtos.LoginRequest;
+import com.example.gestortareas.data.dtos.UserDto;
 import com.example.gestortareas.data.responses.ApiResponse;
+import com.example.gestortareas.data.models.User;
 import com.example.gestortareas.services.JwtService;
 import com.example.gestortareas.services.UserService;
 import org.springframework.http.HttpStatus;
@@ -26,16 +28,26 @@ public class LoginController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Map<String, String>>> login(@RequestBody LoginRequest loginRequest) {
-        ApiResponse<Map<String, String>> response = new ApiResponse<>();
+    public ResponseEntity<ApiResponse<Map<String, Object>>> login(@RequestBody LoginRequest loginRequest) {
+        ApiResponse<Map<String, Object>> response = new ApiResponse<>();
         try {
             UserDetails userDetails = userService.loadUserByUsername(loginRequest.getEmail());
 
             if (userService.checkPassword(loginRequest.getPassword(), userDetails.getPassword())) {
                 String token = jwtService.generateToken(userDetails.getUsername());
 
-                Map<String, String> payload = new HashMap<>();
+                User user = userService.getByEmail(loginRequest.getEmail())
+                        .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + loginRequest.getEmail()));
+
+                UserDto userDto = UserDto.builder()
+                        .id(user.getId())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .build();
+
+                Map<String, Object> payload = new HashMap<>();
                 payload.put("JWT", token);
+                payload.put("user", userDto);
 
                 response.setPayload(payload);
                 response.setMessage("Login exitoso");
